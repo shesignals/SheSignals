@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: autism-screening-api
+    env: docker
+    region: oregon # or frankfurt
+    plan: free # Change to starter to prevent spin-down delays
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8001
+      # Note: Models are bundled in the container so we don't need external storage volumes 
+      # unless the models change frequently outside of deployment.

@@ -16,3 +16,4 @@ wheels/
 # next js
 .next
 node_modules/
+todo.md

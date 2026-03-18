@@ -16,9 +16,6 @@ RUN uv sync --frozen
 # Copy the rest of the application code
 COPY . .
 
-# Run the training script to generate the model and features
-RUN uv run python train_cpu_model.py
-
 # Expose port 8001
 EXPOSE 8001
 
