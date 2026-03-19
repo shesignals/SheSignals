@@ -96,6 +96,12 @@ form {
   border-color: rgba(99,179,237,.6);
 }
 
+/* Ensure <option> tags are readable on all browsers by giving them the panel background */
+.a select option {
+  background-color: var(--panel);
+  color: var(--text);
+}
+
 .hint {
   margin-top: 6px;
   color: var(--muted);

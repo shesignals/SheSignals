@@ -54,20 +54,20 @@ export default function Home() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        
+
         if (res.status === 422) {
-            throw new Error(data.detail ? JSON.stringify(data.detail) : "Invalid or missing input features.");
+          throw new Error(data.detail ? JSON.stringify(data.detail) : "Invalid or missing input features.");
         }
         if (res.status === 429) {
-            throw new Error("You have exceeded the rate limit. Please wait a moment and try again.");
+          throw new Error("You have exceeded the rate limit. Please wait a moment and try again.");
         }
-        
+
         throw new Error(data.detail || `API error ${res.status}`);
       }
 
       const result = await res.json();
       setOutput({ type: "success", data: result });
-      
+
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setOutput({ type: "error", message: errorMessage });
@@ -90,21 +90,51 @@ export default function Home() {
       </header>
 
       <form id="intakeForm" onSubmit={handleSubmit}>
-        
-        <div className="model-selector" style={{ marginBottom: "2rem", padding: "1rem", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
-            <label htmlFor="model-select" style={{ fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
-              Prediction Model
-            </label>
-            <select
-                id="model-select"
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                style={{ width: "100%", padding: "0.75rem", borderRadius: "4px", border: "1px solid #cbd5e1" }}
-            >
-                <option value="lr">Logistic Regression (High Interpretability)</option>
-                <option value="rf">Random Forest (Robust to Outliers)</option>
-                <option value="xgb">XGBoost (High Performance)</option>
-            </select>
+
+        <div style={{ marginBottom: "2rem", padding: "1rem" }}>
+          <label style={{ fontWeight: 600, display: "block", marginBottom: "0.75rem", color: "var(--text)" }}>
+            Select Prediction Model
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+
+            {[
+              { id: 'lr', name: 'Logistic Regression', desc: 'High Interpretability' },
+              { id: 'rf', name: 'Random Forest', desc: 'Robust to Outliers' },
+              { id: 'xgb', name: 'XGBoost', desc: 'High Performance' }
+            ].map(model => (
+              <label
+                key={model.id}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "1rem",
+                  background: selectedModel === model.id ? "rgba(56, 189, 248, 0.08)" : "var(--panel)",
+                  border: `1px solid ${selectedModel === model.id ? "#38bdf8" : "var(--border)"}`,
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <input
+                    type="radio"
+                    name="prediction_model"
+                    value={model.id}
+                    checked={selectedModel === model.id}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    style={{ accentColor: "#38bdf8", width: "16px", height: "16px", cursor: "pointer" }}
+                  />
+                  <span style={{ fontWeight: 600, color: selectedModel === model.id ? "#38bdf8" : "var(--text)" }}>
+                    {model.name}
+                  </span>
+                </div>
+                <span style={{ fontSize: "0.85rem", color: "var(--muted)", paddingLeft: "1.5rem" }}>
+                  {model.desc}
+                </span>
+              </label>
+            ))}
+
+          </div>
         </div>
 
         {FIELDS.map((f) => (
@@ -148,46 +178,46 @@ export default function Home() {
 
       {output && (
         <div className="out" id="output" style={{ marginTop: "2rem" }}>
-            {output.type === "loading" && (
-                <div style={{ textAlign: "center", padding: "2rem", color: "#64748b" }}>
-                    <div className="spinner"></div>
-                    <p>Analyzing patient metrics...</p>
+          {output.type === "loading" && (
+            <div style={{ textAlign: "center", padding: "2rem", color: "#64748b" }}>
+              <div className="spinner"></div>
+              <p>Analyzing patient metrics...</p>
+            </div>
+          )}
+
+          {output.type === "error" && (
+            <div style={{ background: "#fef2f2", color: "#b91c1c", padding: "1.5rem", borderRadius: "8px", border: "1px solid #fca5a5" }}>
+              <h3 style={{ marginTop: 0 }}>Prediction Error</h3>
+              <p>{output.message}</p>
+            </div>
+          )}
+
+          {output.type === "success" && output.data && (
+            <div style={{
+              background: output.data.prediction === 1 ? "#fff1f2" : "#f0fdf4",
+              border: `1px solid ${output.data.prediction === 1 ? "#fda4af" : "#86efac"}`,
+              padding: "2rem",
+              borderRadius: "8px",
+              color: "#0f172a"
+            }}>
+              <h2 style={{ fontSize: "1.5rem", marginTop: 0, color: output.data.prediction === 1 ? "#be123c" : "#15803d" }}>
+                {output.data.Recommendation}
+              </h2>
+
+              <div style={{ display: "flex", gap: "2rem", marginTop: "1.5rem" }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: "0.875rem", color: "#64748b" }}>Model Used</p>
+                  <p style={{ margin: "0.25rem 0 0", fontWeight: 600 }}>{output.data.model_used.toUpperCase()}</p>
                 </div>
-            )}
-            
-            {output.type === "error" && (
-                <div style={{ background: "#fef2f2", color: "#b91c1c", padding: "1.5rem", borderRadius: "8px", border: "1px solid #fca5a5" }}>
-                    <h3 style={{ marginTop: 0 }}>Prediction Error</h3>
-                    <p>{output.message}</p>
+                <div>
+                  <p style={{ margin: 0, fontSize: "0.875rem", color: "#64748b" }}>Confidence</p>
+                  <p style={{ margin: "0.25rem 0 0", fontWeight: 600 }}>
+                    {Math.round(output.data.probability[String(output.data.prediction)] * 100)}%
+                  </p>
                 </div>
-            )}
-            
-            {output.type === "success" && output.data && (
-                <div style={{
-                    background: output.data.prediction === 1 ? "#fff1f2" : "#f0fdf4",
-                    border: `1px solid ${output.data.prediction === 1 ? "#fda4af" : "#86efac"}`,
-                    padding: "2rem",
-                    borderRadius: "8px",
-                    color: "#0f172a"
-                }}>
-                    <h2 style={{ fontSize: "1.5rem", marginTop: 0, color: output.data.prediction === 1 ? "#be123c" : "#15803d" }}>
-                        {output.data.Recommendation}
-                    </h2>
-                    
-                    <div style={{ display: "flex", gap: "2rem", marginTop: "1.5rem" }}>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "0.875rem", color: "#64748b" }}>Model Used</p>
-                            <p style={{ margin: "0.25rem 0 0", fontWeight: 600 }}>{output.data.model_used.toUpperCase()}</p>
-                        </div>
-                        <div>
-                            <p style={{ margin: 0, fontSize: "0.875rem", color: "#64748b" }}>Confidence</p>
-                            <p style={{ margin: "0.25rem 0 0", fontWeight: 600 }}>
-                                {Math.round(output.data.probability[String(output.data.prediction)] * 100)}%
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
