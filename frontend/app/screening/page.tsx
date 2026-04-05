@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { FIELDS } from "../fields";
 
 // 🔥 Dynamic API Base for seamless deployment (Vercel -> Render)
@@ -84,9 +85,10 @@ export default function Home() {
 
   return (
     <div className="wrap">
-      <header>
-        <h1>Autism Screening Model Integration</h1>
-        <p className="sub">Fill out the clinical intake form below to request a prediction from the selected ML model.</p>
+      <header style={{ border: "none", background: "transparent", padding: 0 }}>
+        <h2 style={{ textAlign: "center", marginBottom: "1.5rem", color: "#ffffff" }}>
+            Fill out the screening form below to request a prediction from our technology
+        </h2>
       </header>
 
       <form id="intakeForm" onSubmit={handleSubmit}>
@@ -120,9 +122,9 @@ export default function Home() {
           </div>
         ))}
 
-        <div className="actions">
+        <div className="actions" style={{ justifyContent: "center", gap: "1rem" }}>
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Generating Prediction..." : "Run ML Inference"}
+            {isSubmitting ? "Submitting..." : "Submit Form"}
           </button>
           <button type="button" id="clearBtn" onClick={handleClear}>
             Clear Form
@@ -182,6 +184,12 @@ export default function Home() {
           )}
         </div>
       )}
+
+      <div style={{ textAlign: "center", marginTop: "4rem", marginBottom: "2rem" }}>
+        <Link href="/">
+          <button style={{ padding: "12px 24px", fontSize: "14pt" }}>BACK TO HOMEPAGE</button>
+        </Link>
+      </div>
     </div>
   );
 }

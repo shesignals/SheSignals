@@ -47,7 +47,7 @@
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -116,7 +116,6 @@ form {
   border-color: rgba(254,112,215,.6);
 }
 
-/* Ensure <option> tags are readable on all browsers by giving them the panel background */
 .a select option {
   background-color: var(--panel);
   color: var(--text);
