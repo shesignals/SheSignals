@@ -28,25 +28,111 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 # Global variables to hold the loaded models and features
 ml_resources = {
     "models": {},
-    "feature_names": None
+    "raw_feature_names": None,   # 36 original features (used by RF)
+    "xgb_feature_names": None,  # 46 engineered features (used by XGBoost)
+    "xgb_threshold": 0.5,       # optimal decision threshold for XGBoost
 }
 
 MODEL_FILES = {
-    "lr": os.path.join(MODELS_DIR, "logistic_regression_model.pkl"),
-    "rf": os.path.join(MODELS_DIR, "random_forest_model.pkl"),
     "xgb": os.path.join(MODELS_DIR, "xgboost_model.pkl"),
 }
 
+
+def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Must mirror train_optimized_xgboost.py exactly."""
+    d = df.copy()
+    social_cols = [
+        "Appears comfortable in social settings (e.g., classrooms, birthday parties)",
+        "Prefers spending time with close friend(s) over group of people with group activities",
+        "Seems emotionally or physically exhausted after socializing",
+        "Confidently initiates conversations",
+        "Appears anxious or withdrawn in unfamiliar social settings",
+        "Feels overwhelmed by the need to communicate in social situations?",
+    ]
+    communication_cols = [
+        "Struggles to read facial expressions, tone, or body language",
+        "Frequently feels misunderstood during conversations",
+        "Becomes upset or frustrated when misunderstood",
+        "Struggles to express emotions with words",
+        "Rehearses or plans their conversations (phrases, always greet Good Morning/Evening, etc.) in advance",
+        "Fnds it difficult to follow multiple conversations happening at once (e.g., in a group setting)?",
+    ]
+    sensory_cols = [
+        "Sensitive to loud noises and/or bright lights or visual clutter",
+        "Avoids certain fabrics or textures due to discomfort",
+        "Affected by strong smells that others seem to tolerate",
+        "Appears overwhelmed in crowded or noisy environments",
+    ]
+    emotional_cols = [
+        "Finds it difficult to calm down after becoming upset or stressed",
+        "Finds it difficult to manage emotions during stressful interactions",
+        "Internalizes anxiety or stress without showing it",
+        "Demonstrates strong emotional reactions in intense situations (e.g., anger, crying, withdrawal)",
+    ]
+    masking_cols = [
+        "Monitors others' reactions to her actions to get a validation that she is acting appropriately",
+        "Mimics others' behavior to fit in",
+        "Avoids or struggles to maintain eye contact",
+    ]
+    routine_cols = [
+        "Demonstrates ritualized patterns of verbal or nonverbal behavior with extreme distress at small changes (Prefers routines in daily life)",
+        "Feels overwhelmed / stressed when something changes on them at the last minute or gets upset when others do not follow through on plans/promises made",
+        "Uses the same phrases or greetings in different situations",
+    ]
+
+    def safe_sum(cols):
+        valid = [c for c in cols if c in df.columns]
+        return df[valid].sum(axis=1) if valid else pd.Series(0, index=df.index)
+
+    d["feat_social_score"]        = safe_sum(social_cols)
+    d["feat_communication_score"] = safe_sum(communication_cols)
+    d["feat_sensory_score"]       = safe_sum(sensory_cols)
+    d["feat_emotional_score"]     = safe_sum(emotional_cols)
+    d["feat_masking_score"]       = safe_sum(masking_cols)
+    d["feat_routine_score"]       = safe_sum(routine_cols)
+    d["feat_total_score"]         = (
+        d["feat_social_score"] + d["feat_communication_score"] +
+        d["feat_sensory_score"] + d["feat_emotional_score"] +
+        d["feat_masking_score"] + d["feat_routine_score"]
+    )
+
+    walk_col  = "At what age did your child first start to walk?"
+    speak_col = "At what age did your child first start to speak in full words or phrases?"
+    if walk_col in df.columns and speak_col in df.columns:
+        d["feat_dev_delay_interaction"] = df[walk_col] * df[speak_col]
+        d["feat_dev_delay_sum"]         = df[walk_col] + df[speak_col]
+
+    fh_col = "Is there a family history of autism or related neurodevelopmental conditions?"
+    if fh_col in df.columns:
+        d["feat_family_x_symptoms"] = df[fh_col] * d["feat_total_score"]
+
+    return d
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load features
-    FEATURES_PATH = os.path.join(MODELS_DIR, "feature_names.joblib")
-    if os.path.exists(FEATURES_PATH):
-        ml_resources["feature_names"] = joblib.load(FEATURES_PATH)
-        logger.info(f"Loaded {len(ml_resources['feature_names'])} feature names.")
+    # Load XGBoost feature names (46 — includes engineered features)
+    XGB_FEATURES_PATH = os.path.join(MODELS_DIR, "feature_names.joblib")
+    if os.path.exists(XGB_FEATURES_PATH):
+        ml_resources["xgb_feature_names"] = joblib.load(XGB_FEATURES_PATH)
+        logger.info(f"Loaded {len(ml_resources['xgb_feature_names'])} XGBoost feature names.")
     else:
-        logger.warning(f"'{FEATURES_PATH}' not found.")
-        
+        logger.warning(f"'{XGB_FEATURES_PATH}' not found.")
+
+    # Derive raw feature names (original 36 schema fields — needed to build engineered features)
+    if ml_resources["xgb_feature_names"]:
+        ml_resources["raw_feature_names"] = [
+            f for f in ml_resources["xgb_feature_names"] if not f.startswith("feat_")
+        ]
+        logger.info(f"Raw feature names: {len(ml_resources['raw_feature_names'])}")
+
+    # Load optimal XGBoost decision threshold
+    THRESHOLD_PATH = os.path.join(MODELS_DIR, "xgb_threshold.joblib")
+    if os.path.exists(THRESHOLD_PATH):
+        ml_resources["xgb_threshold"] = float(joblib.load(THRESHOLD_PATH))
+        logger.info(f"XGBoost decision threshold: {ml_resources['xgb_threshold']:.4f}")
+    else:
+        logger.warning("xgb_threshold.joblib not found — using default 0.5")
+
     # Load models
     for model_key, filename in MODEL_FILES.items():
         if os.path.exists(filename):
@@ -54,7 +140,7 @@ async def lifespan(app: FastAPI):
             ml_resources["models"][model_key] = joblib.load(filename)
         else:
             logger.warning(f"Model file '{filename}' not found.")
-            
+
     yield
     # Clean up on shutdown
     ml_resources.clear()
@@ -101,53 +187,45 @@ def health_check(request: Request):
 @limiter.limit("20/minute")
 def predict(request: Request, payload: PredictionRequest):
     try:
-        # Verify that all 3 required models are loaded
-        for required_model in ["lr", "rf", "xgb"]:
-            if required_model not in ml_resources["models"]:
-                raise HTTPException(status_code=500, detail=f"Required model '{required_model}' is not loaded.")
-            
-        feature_names = ml_resources.get("feature_names")
-        if not feature_names:
-             raise HTTPException(status_code=500, detail="Feature names are not loaded.")
+        # Verify XGBoost is loaded
+        if "xgb" not in ml_resources["models"]:
+            raise HTTPException(status_code=500, detail="XGBoost model is not loaded.")
 
-        # Extract values in the exact training order using the Pydantic model dump with aliases
+        raw_feature_names = ml_resources.get("raw_feature_names")
+        xgb_feature_names = ml_resources.get("xgb_feature_names")
+        if not raw_feature_names or not xgb_feature_names:
+            raise HTTPException(status_code=500, detail="Feature names are not loaded.")
+
+        # Build raw 36-feature DataFrame from the request payload
         features_dict = payload.features.model_dump(by_alias=True)
-        
-        input_list = []
-        for feat in feature_names:
-            val = features_dict.get(feat, 0.0)
-            input_list.append(val)
-        
-        # Use DataFrame to preserve column names (required by some models, e.g. XGBoost, Pipelines)
-        X_input = pd.DataFrame([input_list], columns=feature_names)
-        
-        # Ensemble Prediction
-        predictions = []
-        probabilities = {0: 0.0, 1: 0.0}
-        
-        for model_id in ["lr", "rf", "xgb"]:
-            model = ml_resources["models"][model_id]
-            pred = int(model.predict(X_input)[0])
-            prob = model.predict_proba(X_input)[0].tolist()
-            
-            predictions.append(pred)
-            probabilities[0] += prob[0]
-            probabilities[1] += prob[1]
-            
-        # Majority voting
-        majority_vote = 1 if sum(predictions) >= 2 else 0
-        avg_prob_0 = probabilities[0] / 3
-        avg_prob_1 = probabilities[1] / 3
-        
-        recommendation_text = "after consulting with 3 different solid computer programs (machine learning models) we are confident that this subject must see a specialist (think of this as your second and third opinion)" if majority_vote == 1 else "No immediate referral indicated"
-        
+        raw_input = pd.DataFrame(
+            [[features_dict.get(f, 0.0) for f in raw_feature_names]],
+            columns=raw_feature_names
+        )
+
+        # Apply feature engineering → 46 features
+        xgb_input = engineer_features(raw_input)[xgb_feature_names]
+
+        # XGBoost prediction with tuned threshold
+        xgb_model     = ml_resources["models"]["xgb"]
+        xgb_threshold = ml_resources["xgb_threshold"]
+        xgb_prob      = xgb_model.predict_proba(xgb_input)[0].tolist()
+        prediction    = int(xgb_prob[1] >= xgb_threshold)
+
+        recommendation_text = (
+            "after an in-depth analysis by our optimized XGBoost model, "
+            "we are confident that this subject must see a specialist "
+            "(think of this as your second and third opinion)"
+            if prediction == 1 else "No immediate referral indicated"
+        )
+
         return PredictionResponse(
-            prediction=majority_vote,
+            prediction=prediction,
             Recommendation=recommendation_text,
-            model_used="Ensemble (Majority Vote)",
+            model_used="XGBoost (Optimized)",
             probability={
-                "0": round(avg_prob_0, 4),
-                "1": round(avg_prob_1, 4)
+                "0": round(xgb_prob[0], 4),
+                "1": round(xgb_prob[1], 4)
             }
         )
     except HTTPException as e:
