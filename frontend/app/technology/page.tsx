@@ -9,9 +9,9 @@ export default function Technology() {
         </p>
         
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            <div style={{ background: "var(--panel)", padding: "2rem", borderRadius: "12px", border: "1px solid #38bdf8", position: "relative", overflow: "hidden" }}>
+            <div style={{ background: "var(--panel)", padding: "2rem", borderRadius: "12px", border: "1px solid #fe70d7", position: "relative", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-                    <Network size={28} color="#38bdf8" />
+                    <Network size={28} color="#fe70d7" />
                     <h2 style={{ margin: 0 }}>Logistic Regression</h2>
                 </div>
                 <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>

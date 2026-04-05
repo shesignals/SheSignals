@@ -10,7 +10,7 @@ export default function About() {
             <p style={{ marginBottom: "1.5rem" }}>
                 By mapping 36 distinct behavioral and demographic indicators through supervised machine learning models, this software provides immediate, data-driven "Refer" or "Do Not Refer" recommendations alongside a calculated confidence probability.
             </p>
-            <h3 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#38bdf8" }}>Our Mission</h3>
+            <h3 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#fe70d7" }}>Our Mission</h3>
             <p style={{ margin: 0 }}>
                 To reduce diagnostic bottlenecks by empowering front-line clinical staff with powerful, interpretable, and instantaneous artificial intelligence decision-support systems.
             </p>

@@ -3,12 +3,39 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --bg: #f9fafb;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: rgba(0,0,0,.10);
+  --focus: rgba(254, 112, 215, .35);
+  --btn-bg1: rgba(0,0,0,.05);
+  --btn-bg2: rgba(0,0,0,.02);
+  --btn-hover1: rgba(0,0,0,.08);
+  --btn-hover2: rgba(0,0,0,.04);
+  --btn-border: rgba(0,0,0,.15);
+  --input-bg: rgba(0,0,0,.04);
+  --header-bg: rgba(0,0,0,.04);
+  --actions-bg: rgba(0,0,0,.06);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
   --bg: #0b0f14;
   --panel: #121826;
   --text: #e6edf3;
   --muted: #9aa4b2;
   --border: rgba(255,255,255,.10);
-  --focus: rgba(99, 179, 237, .35);
+  --focus: rgba(254, 112, 215, .35);
+  --btn-bg1: rgba(255,255,255,.12);
+  --btn-bg2: rgba(255,255,255,.04);
+  --btn-hover1: rgba(255,255,255,.16);
+  --btn-hover2: rgba(255,255,255,.08);
+  --btn-border: rgba(255,255,255,.2);
+  --input-bg: rgba(255,255,255,.04);
+  --header-bg: rgba(255,255,255,.06);
+  --actions-bg: rgba(0,0,0,.25);
 }
 
 @theme inline {
@@ -16,13 +43,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -40,7 +60,7 @@ body {
 
 header {
   padding: 16px 16px 8px;
-  background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+  background: linear-gradient(180deg, var(--header-bg), transparent);
   border: 1px solid var(--border);
   border-radius: 14px;
 }
@@ -83,7 +103,7 @@ form {
 .a select, .a input {
   width: 100%;
   padding: 10px 10px;
-  background: rgba(255,255,255,.04);
+  background: var(--input-bg);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -93,7 +113,7 @@ form {
 
 .a select:focus, .a input:focus {
   box-shadow: 0 0 0 4px var(--focus);
-  border-color: rgba(99,179,237,.6);
+  border-color: rgba(254,112,215,.6);
 }
 
 /* Ensure <option> tags are readable on all browsers by giving them the panel background */
@@ -113,14 +133,14 @@ form {
   display: flex;
   gap: 10px;
   padding: 14px 16px;
-  background: rgba(0,0,0,.25);
+  background: var(--actions-bg);
   border-top: 1px solid var(--border);
 }
 
 button {
   padding: 10px 18px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  background: linear-gradient(180deg, var(--btn-bg1), var(--btn-bg2));
   color: var(--text);
   border-radius: 10px;
   cursor: pointer;
@@ -130,8 +150,8 @@ button {
 }
 
 button:hover:not(:disabled) { 
-    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
-    border-color: rgba(255,255,255,.2);
+    background: linear-gradient(180deg, var(--btn-hover1), var(--btn-hover2));
+    border-color: var(--btn-border);
 }
 
 button:disabled {
@@ -156,8 +176,8 @@ button:disabled {
 }
 
 .model-selector select:focus {
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.4);
-    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(254, 112, 215, 0.4);
+    border-color: #fe70d7 !important;
     outline: none;
 }
 
@@ -167,7 +187,7 @@ button:disabled {
   margin: 0 auto 16px;
   border: 3px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
-  border-top-color: #38bdf8;
+  border-top-color: #fe70d7;
   animation: spin 1s ease-in-out infinite;
 }
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from 'next/link';
-import { Activity, Menu } from 'lucide-react';
+import Image from 'next/image';
+import { ThemeProvider } from './providers';
+import { ThemeToggle } from './ThemeToggle';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,12 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`} style={{ background: "var(--bg)", color: "var(--text)" }}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         {/* Navigation Bar */}
         <nav style={{ padding: "1.25rem 2rem", background: "var(--panel)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", color: "var(--text)", fontWeight: 700, fontSize: "1.25rem" }}>
-                <Activity size={24} color="#38bdf8" />
+                <Image src="/Final_SheSignals_Logo.png" alt="SheSignals Logo" width={32} height={32} style={{ borderRadius: "4px" }} />
                 <span>IONIS Screening</span>
             </Link>
             
@@ -38,7 +41,9 @@ export default function RootLayout({
                 <Link href="/about" style={{ textDecoration: "none", color: "var(--muted)" }}>About</Link>
                 <Link href="/technology" style={{ textDecoration: "none", color: "var(--muted)" }}>Technology</Link>
                 
-                <Link href="/screening" style={{ textDecoration: "none", padding: "0.5rem 1rem", background: "#38bdf8", color: "#0f172a", borderRadius: "6px", fontWeight: 600 }}>
+                <ThemeToggle />
+                
+                <Link href="/screening" style={{ textDecoration: "none", padding: "0.5rem 1rem", background: "#fe70d7", color: "#ffffff", borderRadius: "6px", fontWeight: 600 }}>
                     Access Form
                 </Link>
             </div>
@@ -57,6 +62,7 @@ export default function RootLayout({
                 <Link href="/contact" style={{ textDecoration: "none", color: "var(--muted)" }}>Contact Us</Link>
             </div>
         </footer>
+        </ThemeProvider>
       </body>
     </html>
   );
