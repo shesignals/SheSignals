@@ -161,7 +161,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://www.shesignals.com",
+        "https://shesignals.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -180,7 +184,8 @@ def health_check(request: Request):
     return {
         "status": "ok",
         "loaded_models": loaded_models,
-        "feature_names_loaded": ml_resources.get("feature_names") is not None
+        "raw_features_loaded": ml_resources.get("raw_feature_names") is not None,
+        "xgb_features_loaded": ml_resources.get("xgb_feature_names") is not None
     }
 
 @app.post("/v1/predict", response_model=PredictionResponse)
